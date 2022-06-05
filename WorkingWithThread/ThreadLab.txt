@@ -1,0 +1,364 @@
+//task1
+
+import java.util.Scanner;
+
+public class Main {
+
+    static class Counter
+    {
+        int count;
+        void inc()
+        {
+            count = count + 1;
+        }
+        int getCount()
+        {
+            return count;
+        }
+    }
+
+    static Counter counter;
+    static int numberOfTimes;
+
+    public static class callTheIncThread extends Thread {
+        public void run() {
+            for (int i = 0; i < numberOfTimes; i++) {
+                counter.inc();
+            }
+        }
+    }
+    
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int numberOfThreads;
+
+        System.out.println("Please, enter the number of threads");
+            numberOfThreads = scanner.nextInt();
+
+        System.out.println("Please, enter the number of times that each thread will increment the counter");
+        numberOfTimes = scanner.nextInt();
+
+        callTheIncThread[] threads = new callTheIncThread[numberOfThreads];
+        counter = new Counter();
+
+        for(int i = 0; i < numberOfThreads; i++)
+        {
+            threads[i] = new callTheIncThread();
+        }
+
+        for(int i = 0; i<numberOfThreads; i++)
+        {
+            threads[i].start();
+        }
+
+        for(int i = 0; i<numberOfThreads; i++)
+        {
+            try
+            {
+                threads[i].join();
+            }
+            catch (InterruptedException e) {
+            }
+
+        }
+
+        System.out.println("The result must be " + numberOfThreads*numberOfTimes);
+        System.out.println("The result is " + counter.getCount());
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Task2
+import java.util.Scanner;
+
+public class Main {
+
+    public static class MyRunnable implements Runnable {
+        int integer;
+
+        public MyRunnable(int integer) {
+            this.integer = integer;
+        }
+
+        @Override
+        public void run() {
+            int sum = sumOfIntegers(integer);
+            System.out.println("The result is  " + sum);
+        }
+    }
+
+    private static int sumOfIntegers(int integer) {
+        int count = 0;
+        while (integer != 0) {
+            count = count + integer;
+            integer--;
+        }
+        return count;
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int inter;
+        System.out.println("Please, enter the integer");
+        inter = scanner.nextInt();
+
+        MyRunnable myRunnable = new MyRunnable(inter);
+        Thread myThread1 = new Thread(myRunnable);
+        myThread1.start();
+        
+    }
+}
+
+//TASK3
+
+import java.util.ArrayList;
+import java.util.Random;
+
+public class Main {
+
+    private static int total;
+
+
+
+    synchronized private static void getTotal(int x)
+    {
+        total = total + x;
+    }
+
+    public static class MyThread extends Thread
+    {
+        int id, start, end;
+        private ArrayList<Integer> list;
+
+        public MyThread(int start, int end,  ArrayList<Integer> list)
+        {
+            this.start = start;
+            this.end = end;
+            this.list = list;
+        }
+
+        int count = 0;
+        public void run()
+        {
+            count = theNumberOfPrimes(start, end, list);
+            System.out.println("There are " + count + " primes between "
+                          + start + " and " + end);
+            getTotal(count);
+
+        }
+    }
+private  static int theNumberOfPrimes(int start, int end, ArrayList<Integer> list)
+{
+    int count = 0;
+    for(int i=start; i<=end; i++)
+    {
+        if(isPrime(list.get(i), list))
+            count++;
+    }
+    return count;
+}
+    private static boolean isPrime(int x, ArrayList<Integer> list)
+    {
+        int max = (int)Math.sqrt(x);
+        for(int i = 2; i <= max; i++)
+            if( x % i  == 0)
+                return false;
+
+        return true;
+    }
+
+
+
+    public static void main(String[] args) {
+
+        ArrayList<Integer> list = new ArrayList<>();
+        Random random = new Random();
+        for(int i = 0; i<10000; i++)
+        {
+            list.add(random.nextInt(1000));
+        }
+
+        long startTime2 = System.currentTimeMillis();
+        total = 0;
+        MyThread myThread3 = new MyThread(list.get(0), list.get(9999), list);
+        myThread3.start();
+        try
+        {
+            myThread3.join();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        long elapsedTime1 = System.currentTimeMillis() - startTime2;
+        System.out.println("The number of primes are by the first algorithm " + total);
+        System.out.println("Total elapsed time: " + (elapsedTime1/1000.0)+" seconds");
+
+
+        long startTime1 = System.currentTimeMillis();
+        total = 0;
+        MyThread myThread1 = new MyThread(list.get(0), list.get(4999), list);
+        MyThread myThread2 = new MyThread(list.get(5000), list.get(9999), list);
+        myThread1.start();
+        myThread2.start();
+
+        try {
+            myThread1.join();
+            myThread2.join();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+
+        long elapsedTime = System.currentTimeMillis() - startTime1;
+        System.out.println("The number of primes are by the second algorithm" + total);
+        System.out.println("Total elapsed time: " + (elapsedTime/1000.0)+" seconds");
+
+
+    }
+}
+
+
+
+//TASK 4
+import java.util.Scanner;
+
+public class Main {
+
+    private final static int LIMIT = 100000;
+    private volatile static int divisorCount = 0;
+    private volatile static int integer;
+
+    synchronized private static void result(int maxCount, int intWithMax) {
+        if (maxCount > divisorCount) {
+            divisorCount = maxCount;
+            integer = intWithMax;
+        }
+    }
+
+    private static class theNumberOfDivisors extends Thread {
+        int min, max;
+        public theNumberOfDivisors(int min, int max) {
+            this.min = min;
+            this.max = max;
+        }
+        public void run() {
+            int maxDivisors = 0;
+            int inter = 0;
+            for (int i = min; i < max; i++) {
+                int divisors = countDivisors(i);
+                if (divisors > maxDivisors) {
+                    maxDivisors = divisors;
+                    inter = i;
+                }
+            }
+            result(maxDivisors,inter);
+        }
+    }
+
+    private static void findTheNumberOfDivisorsThread(int numberOfThreads) {
+        long startTime = System.currentTimeMillis();
+        theNumberOfDivisors[] threads = new theNumberOfDivisors[numberOfThreads];
+        int dividedInteger = LIMIT /numberOfThreads;
+        int start = 1;
+        int end = start + dividedInteger - 1;
+        for (int i = 0; i < numberOfThreads; i++) {
+            if (i == numberOfThreads - 1) {
+                end = LIMIT;
+            }
+            threads[i] = new theNumberOfDivisors(start, end);
+            start = end+1;
+            end = start + dividedInteger - 1;
+        }
+        divisorCount = 0;
+        for (int i = 0; i < numberOfThreads; i++) {
+            threads[i].start();
+        }
+        for (int i = 0; i < numberOfThreads; i++) {
+
+            while (threads[i].isAlive()) {
+                try {
+                    threads[i].join();
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        System.out.println("The largest number of divisors " +  "between 1 and " + LIMIT + " is " + divisorCount);
+        System.out.println("An integer:  " + integer);
+        System.out.println("Total elapsed time:  " + (elapsedTime/1000.0) + " seconds.");
+    }
+
+    public static void main(String[] args)
+    {
+        Scanner scanner = new Scanner(System.in);
+        int numberOfThreads = 0;
+        System.out.print("Please, enter the number of threads ");
+        numberOfThreads = scanner.nextInt();
+        findTheNumberOfDivisorsThread(numberOfThreads);
+    }
+
+    public static int countDivisors(int N) {
+        int count = 0;
+        for (int i = 1; i <= N ; i++) {
+            if ( N % i == 0 )
+                count ++;
+        }
+        return count;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
